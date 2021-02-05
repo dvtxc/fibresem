@@ -18,6 +18,13 @@ def readtags(filehandle):
             name, value = tag[0].strip(), tag[1].strip()
             tif_tags["image"][name] = value
 
-    tif_tags["Pixel Size"] = tif_tags["image"]["Image Pixel Size"]
+    pixsize = tif_tags["image"]["Image Pixel Size"]
+
+    tif_tags["Pixel Size"] = pixsize
+    
+    pixsize = pixsize.split(' ')
+
+    tif_tags["Pixel Size Value"] = float(pixsize[0])
+    tif_tags["Pixel Size Unit"] = pixsize[1]
 
     return tif_tags
