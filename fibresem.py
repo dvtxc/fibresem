@@ -9,22 +9,27 @@ import numpy as np
 
 
 from lib import readtif
-from lib import segment
+
+# from lib import segment
 
 
 # cropping
 def crop_square(tifimg):
+    # Crop to Square and omit the SEM meta bar
+
     barheight = 0.11
-    newHeight = round(tags["ImageLength"] * (1 - barheight))
-    left = round((tags["ImageWidth"] - newHeight) / 2)
-    right = tags["ImageWidth"] - left
+    newHeight = round(tifimg.shape[0] * (1 - barheight))
+    left = round((tifimg.shape[1] - newHeight) / 2)
+    right = tifimg.shape[1] - left
 
     tifimg = tifimg[0:newHeight, left:right]
 
     return tifimg
 
 
-def plotty(tifimg):
+def annotate(tifimg):
+    # Annotate
+
     f = plt.figure(
         figsize=(tifimg.shape[1] / 300, tifimg.shape[0] / 300)
     )  # figure with correct aspect ratio
@@ -54,7 +59,38 @@ def plotty(tifimg):
     print("Output written")
 
 
+def save_cropped(pathin, pathout):
+    tifimg, tags = readtif.importtif(pathin)
+
+    img = crop_square(tifimg)
+
+    save_img(img, pathout)
+
+
+def save_img(imgarray, pathout):
+    f = plt.figure(
+        figsize=(imgarray.shape[1] / 300, imgarray.shape[0] / 300)
+    )  # figure with correct aspect ratio
+    ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
+    ax.imshow(tifimg, cmap="gray")
+    ax.axis("off")
+
+    plt.savefig(pathout, bbox_inches="tight", pad_inches=0, dpi=300)
+    print("Output written")
+
+
+def read(pathin):
+    tifimg, tags = readtif.importtif(pathin)
+    return (tifimg, tags)
+
+
+def getPixelSize(tags):
+    pass
+
+
 def printtoarr():
+    # This function 'burns' the information into the image array
+
     """
     io_buf = io.BytesIO()
     fig.savefig(io_buf, format='raw', dpi=DPI)
@@ -76,7 +112,7 @@ if __name__ == "__main__":
 
     # plotty(tifimg)
 
-    segment.seg_watershed(tifimg, 1.3, 2.5, 12, 100)
+    # segment.seg_watershed(tifimg, 1.3, 2.5, 12, 100)
 
     # plotty(tifimg)
     pass
