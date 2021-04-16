@@ -27,8 +27,15 @@ def crop_square(tifimg):
     return tifimg
 
 
-def annotate(tifimg):
+def annotate(*args):
     # Annotate
+
+    tifimg = args[0]
+    tags = args[1]
+    if len(args) == 3:
+        outputname = args[2]
+    else:
+        outputname = "output.png"
 
     f = plt.figure(
         figsize=(tifimg.shape[1] / 300, tifimg.shape[0] / 300)
@@ -36,9 +43,13 @@ def annotate(tifimg):
     ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
     ax.imshow(tifimg, cmap="gray")
 
-    text = u""
-    ax.text(50, 50, text, color=(1, 1, 1))
     ax.axis("off")
+
+    # Calculate dynamic border padding and font size, so the annotations are independent from image size
+    imgpadding = 0.001 * tifimg.shape[0]
+    dynFontSize = round(0.013 * tifimg.shape[0])
+    fntScalebar = {"weight": "bold", "size": dynFontSize}
+    fntAnnotation = {"weight": "normal", "size": dynFontSize}
 
     scalebar = ScaleBar(
         tags["Pixel Size Value"],
@@ -49,14 +60,28 @@ def annotate(tifimg):
         color="w",
         box_alpha=0,
         scale_loc="top",
-        border_pad=1.5,
+        border_pad=imgpadding,
+        font_properties=fntScalebar,
         sep=0.2,
     )
     ax.add_artist(scalebar)
 
+    # Add sample name in lower right corner
+    filenameparts = tags["filename"].split("_")
+    text = filenameparts[0]
+    ax.text(
+        0.05 * tifimg.shape[0],
+        0.95 * tifimg.shape[0],
+        text,
+        color=(1, 1, 1),
+        size=dynFontSize,
+    )
+
     # plt.show()
-    plt.savefig("output.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig(outputname, bbox_inches="tight", pad_inches=0, dpi=300)
     print("Output written")
+
+    plt.close()
 
 
 def save_cropped(pathin, pathout):
@@ -104,12 +129,49 @@ def printtoarr():
 if __name__ == "__main__":
     # MAIN()
 
-    file_path = "test2.tif"
+    import os
 
-    tifimg, tags = readtif.importtif(file_path)
+    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.04.14\restinput2"
+    fileExt = ".tif"
 
-    tifimg = crop_square(tifimg)
+    outputFolderName = "cropped"
 
+    # for root, dirs, files in os.walk(baseDir):
+    files = []
+
+    for item in os.listdir(baseDir):
+        if os.path.isfile(os.path.join(baseDir, item)):
+            files.append(item)
+
+    files = [fi for fi in files if fi.endswith(fileExt)]
+
+    if len(files) > 0:
+
+        outputPath = os.path.join(baseDir, outputFolderName)
+        if not os.path.exists(outputPath):
+            os.mkdir(outputPath)
+
+        for i in range(len(files)):
+            currentFileName = files[i]
+
+            print(currentFileName)
+
+            img, tags = read(os.path.join(baseDir, currentFileName))
+
+            img = crop_square(img)
+
+            outFileName = currentFileName.replace(".tif", ".png")
+            annotate(img, tags, os.path.join(outputPath, outFileName))
+
+    """
+    file_path = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.02.24\COLL.209_0020u_img57_hres.tif"
+
+    img, tags = read(file_path)
+
+    img = crop_square(img)
+
+    annotate(img, tags)
+    """
     # plotty(tifimg)
 
     # segment.seg_watershed(tifimg, 1.3, 2.5, 12, 100)

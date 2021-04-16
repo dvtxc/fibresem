@@ -22,7 +22,8 @@ _PREFIXES_FACTORS = {
     "d": 1e-1,
     "c": 1e-2,
     "m": 1e-3,
-    "\u00b5": 1e-6,
+    # "\u00b5": 1e-6,
+    "µ": 1e-6,
     "u": 1e-6,
     "n": 1e-9,
     "p": 1e-12,
@@ -31,7 +32,9 @@ _PREFIXES_FACTORS = {
     "z": 1e-21,
     "y": 1e-24,
 }
-_LATEX_MU = "$\\mathrm{\\mu}$"
+# _LATEX_MU = "$\\mathrm{\\mu}$"
+# Changed to unicode µ
+_LATEX_MU = "µ"
 
 
 class _Dimension(object):

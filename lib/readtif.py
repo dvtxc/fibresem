@@ -18,7 +18,9 @@ def readtags(filehandle):
         tif_tags[name] = value
 
     tif_tags["image"] = {}
-    
+
+    tif_tags["filename"] = filehandle.filename
+
     try:
         imgtags = tif_tags[str(tag_index)].replace("\x00", "").split("\r\n")
 
@@ -37,6 +39,10 @@ def readtags(filehandle):
         tif_tags["Pixel Size Value"] = float(pixsize[0])
         tif_tags["Pixel Size Unit"] = pixsize[1]
     except:
-        print('Could not find ZEISS SEM TAG.')
+        print("Could not find ZEISS SEM TAG.")
+
+        tif_tags["Pixel Size"] = "NaN"
+        tif_tags["Pixel Size Value"] = 0
+        tif_tags["Pixel Size Unit"] = ""
 
     return tif_tags
