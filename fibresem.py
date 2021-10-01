@@ -1,17 +1,13 @@
+import os
 import tifffile
-
 import matplotlib.pyplot as plt
-from matplotlib_scalebar.scalebar import ScaleBar
 import numpy as np
+from matplotlib_scalebar.scalebar import ScaleBar
 
 # import tkinter as tk
 # from tkinter import filedialog
 
-
 from lib import readtif
-
-# from lib import segment
-
 
 # cropping
 def crop_square(tifimg):
@@ -25,64 +21,6 @@ def crop_square(tifimg):
     tifimg = tifimg[0:newHeight, left:right]
 
     return tifimg
-
-
-def annotate(*args):
-    # Annotate
-
-    tifimg = args[0]
-    tags = args[1]
-    if len(args) == 3:
-        outputname = args[2]
-    else:
-        outputname = "output.png"
-
-    f = plt.figure(
-        figsize=(tifimg.shape[1] / 300, tifimg.shape[0] / 300)
-    )  # figure with correct aspect ratio
-    ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
-    ax.imshow(tifimg, cmap="gray")
-
-    ax.axis("off")
-
-    # Calculate dynamic border padding and font size, so the annotations are independent from image size
-    imgpadding = 0.001 * tifimg.shape[0]
-    dynFontSize = round(0.013 * tifimg.shape[0])
-    fntScalebar = {"weight": "bold", "size": dynFontSize}
-    fntAnnotation = {"weight": "normal", "size": dynFontSize}
-
-    if not tags["Pixel Size"] == "NaN":
-        scalebar = ScaleBar(
-            tags["Pixel Size Value"],
-            tags["Pixel Size Unit"],
-            length_fraction=0.25,
-            width_fraction=0.022,
-            location="lower right",
-            color="w",
-            box_alpha=0,
-            scale_loc="top",
-            border_pad=imgpadding,
-            font_properties=fntScalebar,
-            sep=0.2,
-        )
-        ax.add_artist(scalebar)
-
-    # Add sample name in lower right corner
-    filenameparts = tags["filename"].split("_")
-    text = filenameparts[1] + " " + filenameparts[2]
-    ax.text(
-        0.05 * tifimg.shape[0],  # x coordinate text
-        0.95 * tifimg.shape[0],  # y coordinate text
-        text,  # text string
-        color=(1, 1, 1),  # color
-        size=dynFontSize * 0.7,  # size
-    )
-
-    # plt.show()
-    plt.savefig(outputname, bbox_inches="tight", pad_inches=0, dpi=300)
-    print("Output written")
-
-    plt.close()
 
 
 def save_cropped(pathin, pathout):
@@ -127,55 +65,150 @@ def printtoarr():
     """
 
 
-if __name__ == "__main__":
-    # MAIN()
+def getFileListOnPath(path: str, filterExtension="") -> list:
+    """Returns list of files in path"""
 
-    import os
+    fileList = []
 
-    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\10_Cell Culture\210920_CPD_R3\renamed"
-    fileExt = ".tif"
+    # Get list of all files
+    for item in os.listdir(path):
+        if os.path.isfile(os.path.join(path, item)):
+            if item.endswith(filterExtension):
+                fileList.append(os.path.join(path, item))
 
-    outputFolderName = "cropped"
+    return fileList
 
-    # for root, dirs, files in os.walk(baseDir):
-    files = []
 
-    for item in os.listdir(baseDir):
-        if os.path.isfile(os.path.join(baseDir, item)):
-            files.append(item)
+class Project:
+    def __init__(self, path="."):
+        self.Path = path
+        self.FileList = list()
+        self.Images = list()
 
-    files = [fi for fi in files if fi.endswith(fileExt)]
+    def addImages(self, extension=".tif"):
+        # Set self.FileList
+        if not self.getFileList(self.Path, extension):
+            # logging.warning("No files were found.")
+            return None
 
-    if len(files) > 0:
+        for imagefilepath in self.FileList:
+            self.Images.append(Image(self, imagefilepath))
 
-        outputPath = os.path.join(baseDir, outputFolderName)
+    def getFileList(self, path=".", extension=".tif") -> bool:
+        # Get list of files
+        fileList = getFileListOnPath(path, extension)
+
+        # Did we find files?
+        if len(fileList) > 0:
+            self.FileList = fileList
+            return True
+
+        return False
+
+
+class Image:
+    def __init__(self, parent, filepath):
+        self.Project = parent
+        self.Path = filepath
+
+    @property
+    def Filename(self) -> str:
+        return os.path.split(self.Path)[-1]
+
+    def loadImage(self):
+        tifimg, tags = readtif.importtif(self.Path)
+        tifimg = crop_square(tifimg)
+        self.Data = tifimg
+        self.Meta = tags
+
+    def unloadImage(self):
+        self.Data = None
+        self.Meta = None
+
+    def annotate(self):
+
+        if self.Data is None:
+            return None  # No image loaded
+
+        tifimg = self.Data
+
+        # Create Matplotlib figure
+        f = plt.figure(
+            figsize=(tifimg.shape[1] / 300, tifimg.shape[0] / 300)
+        )  # figure with correct aspect ratio
+        ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
+        ax.imshow(tifimg, cmap="gray", vmin=0, vmax=255)
+        ax.axis("off")
+
+        self.addScalebar(ax)
+        self.addSampleName(ax)
+
+        # Save
+        outputFolderName = "cropped"
+        outputPath = os.path.join(self.Project.Path, outputFolderName)
         if not os.path.exists(outputPath):
             os.mkdir(outputPath)
 
-        for i in range(len(files)):
-            currentFileName = files[i]
+        targetName = os.path.join(outputPath, self.Filename.replace(".tif", ".png"))
+        plt.savefig(targetName, bbox_inches="tight", pad_inches=0, dpi=300)
+        print("Output written")
+        plt.close()
 
-            print(currentFileName)
+    def addScalebar(self, figure_axes):
+        if self.Meta["Pixel Size"] == "NaN":
+            return None
 
-            img, tags = read(os.path.join(baseDir, currentFileName))
+        # Calculate dynamic border padding and font size, so the annotations are independent from image size
+        imgpadding = 0.001 * self.Data.shape[0]
+        dynFontSize = round(0.013 * self.Data.shape[0])
+        fntScalebar = {"weight": "bold", "size": dynFontSize}
+        fntAnnotation = {"weight": "normal", "size": dynFontSize}
 
-            img = crop_square(img)
+        # Create scalebar
+        scalebar = ScaleBar(
+            self.Meta["Pixel Size Value"],
+            self.Meta["Pixel Size Unit"],
+            length_fraction=0.25,
+            width_fraction=0.022,
+            location="lower right",
+            color="w",
+            box_alpha=0,
+            scale_loc="top",
+            border_pad=imgpadding,
+            font_properties=fntScalebar,
+            sep=0.2,
+        )
 
-            outFileName = currentFileName.replace(".tif", ".png")
-            annotate(img, tags, os.path.join(outputPath, outFileName))
+        # Add to figure
+        figure_axes.add_artist(scalebar)
 
-    """
-    file_path = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.02.24\COLL.209_0020u_img57_hres.tif"
+    def addSampleName(self, figure_axes):
+        dynFontSize = round(0.013 * self.Data.shape[0])
 
-    img, tags = read(file_path)
+        # Add sample name in lower left corner
+        filenameparts = self.Filename.split("_")
+        string = filenameparts[1] + " " + filenameparts[2]
+        figure_axes.text(
+            0.05 * self.Data.shape[0],  # x coordinate text
+            0.95 * self.Data.shape[0],  # y coordinate text
+            string,  # text string
+            color=(1, 1, 1),  # color
+            size=dynFontSize * 0.7,  # size
+        )
 
-    img = crop_square(img)
 
-    annotate(img, tags)
-    """
-    # plotty(tifimg)
+if __name__ == "__main__":
+    # MAIN()
 
-    # segment.seg_watershed(tifimg, 1.3, 2.5, 12, 100)
+    baseDir = r"C:\Dev\python\sem\fibresem\testfiles\originals"
+    fileExt = ".tif"
 
-    # plotty(tifimg)
-    pass
+    project = Project(baseDir)
+    project.addImages()
+
+    for image in project.Images:
+        image.loadImage()
+        image.annotate()
+        image.unloadImage()
+
+    outputFolderName = "cropped"

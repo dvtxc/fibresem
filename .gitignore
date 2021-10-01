@@ -1,5 +1,6 @@
 ## Custom .gitignore lines
 experimental/
+testfiles/
 
 ## Auto-Generated Python .gitignore file
 # Byte-compiled / optimized / DLL files
