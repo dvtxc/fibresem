@@ -51,30 +51,31 @@ def annotate(*args):
     fntScalebar = {"weight": "bold", "size": dynFontSize}
     fntAnnotation = {"weight": "normal", "size": dynFontSize}
 
-    scalebar = ScaleBar(
-        tags["Pixel Size Value"],
-        tags["Pixel Size Unit"],
-        length_fraction=0.25,
-        width_fraction=0.022,
-        location="lower right",
-        color="w",
-        box_alpha=0,
-        scale_loc="top",
-        border_pad=imgpadding,
-        font_properties=fntScalebar,
-        sep=0.2,
-    )
-    ax.add_artist(scalebar)
+    if not tags["Pixel Size"] == "NaN":
+        scalebar = ScaleBar(
+            tags["Pixel Size Value"],
+            tags["Pixel Size Unit"],
+            length_fraction=0.25,
+            width_fraction=0.022,
+            location="lower right",
+            color="w",
+            box_alpha=0,
+            scale_loc="top",
+            border_pad=imgpadding,
+            font_properties=fntScalebar,
+            sep=0.2,
+        )
+        ax.add_artist(scalebar)
 
     # Add sample name in lower right corner
     filenameparts = tags["filename"].split("_")
-    text = filenameparts[0]
+    text = filenameparts[1] + " " + filenameparts[2]
     ax.text(
-        0.05 * tifimg.shape[0],
-        0.95 * tifimg.shape[0],
-        text,
-        color=(1, 1, 1),
-        size=dynFontSize,
+        0.05 * tifimg.shape[0],  # x coordinate text
+        0.95 * tifimg.shape[0],  # y coordinate text
+        text,  # text string
+        color=(1, 1, 1),  # color
+        size=dynFontSize * 0.7,  # size
     )
 
     # plt.show()
@@ -97,7 +98,7 @@ def save_img(imgarray, pathout):
         figsize=(imgarray.shape[1] / 300, imgarray.shape[0] / 300)
     )  # figure with correct aspect ratio
     ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
-    ax.imshow(tifimg, cmap="gray")
+    ax.imshow(tifimg, cmap="gray", vmin=0, vmax=255)
     ax.axis("off")
 
     plt.savefig(pathout, bbox_inches="tight", pad_inches=0, dpi=300)
@@ -131,7 +132,7 @@ if __name__ == "__main__":
 
     import os
 
-    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.04.14\restinput2"
+    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\10_Cell Culture\210920_CPD_R3\renamed"
     fileExt = ".tif"
 
     outputFolderName = "cropped"
