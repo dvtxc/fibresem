@@ -1,6 +1,7 @@
 import tifffile
 
-tag_index = 34119
+# ZEISS SEM tag index for pixel size information
+TAG_INDEX = 34119
 
 
 def importtif(path):
@@ -22,7 +23,7 @@ def readtags(filehandle):
     tif_tags["filename"] = filehandle.filename
 
     try:
-        imgtags = tif_tags[str(tag_index)].replace("\x00", "").split("\r\n")
+        imgtags = tif_tags[str(TAG_INDEX)].replace("\x00", "").split("\r\n")
 
         for tag in imgtags:
             if "=" in tag:

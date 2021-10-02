@@ -9,47 +9,10 @@ from matplotlib_scalebar.scalebar import ScaleBar
 
 from lib import readtif
 
-# cropping
-def crop_square(tifimg):
-    # Crop to Square and omit the SEM meta bar
-
-    barheight = 0.11
-    newHeight = round(tifimg.shape[0] * (1 - barheight))
-    left = round((tifimg.shape[1] - newHeight) / 2)
-    right = tifimg.shape[1] - left
-
-    tifimg = tifimg[0:newHeight, left:right]
-
-    return tifimg
-
-
-def save_cropped(pathin, pathout):
-    tifimg, tags = readtif.importtif(pathin)
-
-    img = crop_square(tifimg)
-
-    save_img(img, pathout)
-
-
-def save_img(imgarray, pathout):
-    f = plt.figure(
-        figsize=(imgarray.shape[1] / 300, imgarray.shape[0] / 300)
-    )  # figure with correct aspect ratio
-    ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
-    ax.imshow(tifimg, cmap="gray", vmin=0, vmax=255)
-    ax.axis("off")
-
-    plt.savefig(pathout, bbox_inches="tight", pad_inches=0, dpi=300)
-    print("Output written")
-
-
-def read(pathin):
-    tifimg, tags = readtif.importtif(pathin)
-    return (tifimg, tags)
-
-
-def getPixelSize(tags):
-    pass
+# Constants
+SEM_BAR_HEIGHT = 0.11
+OUTPUT_FOLDER_NAME = "cropped"
+KEEP_IN_MEMORY = False
 
 
 def printtoarr():
@@ -86,6 +49,8 @@ class Project:
         self.Images = list()
 
     def addImages(self, extension=".tif"):
+        """Get a list of all images on project path and add those images to the project"""
+
         # Set self.FileList
         if not self.getFileList(self.Path, extension):
             # logging.warning("No files were found.")
@@ -95,6 +60,8 @@ class Project:
             self.Images.append(Image(self, imagefilepath))
 
     def getFileList(self, path=".", extension=".tif") -> bool:
+        """Set self.FileList"""
+
         # Get list of files
         fileList = getFileListOnPath(path, extension)
 
@@ -110,49 +77,82 @@ class Image:
     def __init__(self, parent, filepath):
         self.Project = parent
         self.Path = filepath
+        self.Data = None
+        self.Meta = None
 
     @property
     def Filename(self) -> str:
         return os.path.split(self.Path)[-1]
 
-    def loadImage(self):
-        tifimg, tags = readtif.importtif(self.Path)
-        tifimg = crop_square(tifimg)
-        self.Data = tifimg
-        self.Meta = tags
+    @property
+    def Name(self) -> str:
+        return "".join(self.Filename.split(".")[0:-1])
+
+    def loadImage(self) -> bool:
+        """Load the tif image and store as np.ndarray"""
+
+        # Read tif file
+        try:
+            tifimg, tags = readtif.importtif(self.Path)
+            self.Data = tifimg
+            self.Meta = tags
+        except:
+            return False
+
+        # Crop to square
+        self.crop_square()
+
+        # Return success
+        return True
 
     def unloadImage(self):
         self.Data = None
         self.Meta = None
 
-    def annotate(self):
+    def crop_square(self, barheight=SEM_BAR_HEIGHT):
+        """Crop to Square and omit the SEM meta bar"""
 
+        newHeight = round(self.Data.shape[0] * (1 - barheight))
+        left = round((self.Data.shape[1] - newHeight) / 2)
+        right = self.Data.shape[1] - left
+
+        self.Data = self.Data[0:newHeight, left:right]
+
+    def annotate(self, addscalebar=True, addsamplename=True):
+        """
+        Add annotations to image:
+        - a scalebar in the lower right corner
+        - sample name in the lower left corner
+        """
+
+        # Is an image loaded?
         if self.Data is None:
-            return None  # No image loaded
+            if not self.loadImage():
+                return None  # No image loaded
 
-        tifimg = self.Data
+        img = self.Data
 
         # Create Matplotlib figure
         f = plt.figure(
-            figsize=(tifimg.shape[1] / 300, tifimg.shape[0] / 300)
+            figsize=(img.shape[1] / 300, img.shape[0] / 300)
         )  # figure with correct aspect ratio
         ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
-        ax.imshow(tifimg, cmap="gray", vmin=0, vmax=255)
+        ax.imshow(img, cmap="gray", vmin=0, vmax=255)
         ax.axis("off")
 
-        self.addScalebar(ax)
-        self.addSampleName(ax)
+        # Add annotations
+        if addscalebar:
+            self.addScalebar(ax)
 
-        # Save
-        outputFolderName = "cropped"
-        outputPath = os.path.join(self.Project.Path, outputFolderName)
-        if not os.path.exists(outputPath):
-            os.mkdir(outputPath)
+        if addsamplename:
+            self.addSampleName(ax)
 
-        targetName = os.path.join(outputPath, self.Filename.replace(".tif", ".png"))
-        plt.savefig(targetName, bbox_inches="tight", pad_inches=0, dpi=300)
-        print("Output written")
-        plt.close()
+        # Save figure
+        self.saveFigure(plt)
+
+        # Unload image to save memory
+        if not KEEP_IN_MEMORY:
+            self.unloadImage()
 
     def addScalebar(self, figure_axes):
         if self.Meta["Pixel Size"] == "NaN":
@@ -186,8 +186,9 @@ class Image:
         dynFontSize = round(0.013 * self.Data.shape[0])
 
         # Add sample name in lower left corner
-        filenameparts = self.Filename.split("_")
-        string = filenameparts[1] + " " + filenameparts[2]
+        samplenameParts = self.Name.split("_")
+        string = " ".join(samplenameParts[0:1])
+
         figure_axes.text(
             0.05 * self.Data.shape[0],  # x coordinate text
             0.95 * self.Data.shape[0],  # y coordinate text
@@ -196,19 +197,57 @@ class Image:
             size=dynFontSize * 0.7,  # size
         )
 
+    def saveFigure(self, figureplot):
+        # Save
+        outputFolderName = OUTPUT_FOLDER_NAME
+        plt = figureplot
+
+        outputDirectory = os.path.join(self.Project.Path, outputFolderName)
+        if not os.path.exists(outputDirectory):
+            os.mkdir(outputDirectory)
+
+        outputFile = self.Name + ".png"
+        targetPath = os.path.join(outputDirectory, outputFile)
+        plt.savefig(targetPath, bbox_inches="tight", pad_inches=0, dpi=300)
+        plt.close()
+
 
 if __name__ == "__main__":
     # MAIN()
 
-    baseDir = r"C:\Dev\python\sem\fibresem\testfiles\originals"
+    baseDir = r"C:\dev\python\sem\fibresem\testfiles\test1"
     fileExt = ".tif"
 
     project = Project(baseDir)
     project.addImages()
 
     for image in project.Images:
-        image.loadImage()
+        print(image.Name)
         image.annotate()
-        image.unloadImage()
 
-    outputFolderName = "cropped"
+
+"""
+def save_cropped(pathin, pathout):
+    tifimg, tags = readtif.importtif(pathin)
+
+    img = crop_square(tifimg)
+
+    save_img(img, pathout)
+
+
+def save_img(imgarray, pathout):
+    f = plt.figure(
+        figsize=(imgarray.shape[1] / 300, imgarray.shape[0] / 300)
+    )  # figure with correct aspect ratio
+    ax = plt.axes((0, 0, 1, 1))  # axes over whole figure
+    ax.imshow(tifimg, cmap="gray", vmin=0, vmax=255)
+    ax.axis("off")
+
+    plt.savefig(pathout, bbox_inches="tight", pad_inches=0, dpi=300)
+    print("Output written")
+
+
+def read(pathin):
+    tifimg, tags = readtif.importtif(pathin)
+    return (tifimg, tags)
+"""
