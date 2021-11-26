@@ -4,10 +4,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib_scalebar.scalebar import ScaleBar
 
+
 # import tkinter as tk
 # from tkinter import filedialog
 
 from lib import readtif
+from lib import fibreanalysis
+
+# from lib.fibreanalysis import Analysis
+# from lib.fibreanalysis import Result
+
+analysis_method = "matlab"
 
 # cropping
 def crop_square(tifimg):
@@ -85,6 +92,11 @@ class Project:
         self.FileList = list()
         self.Images = list()
 
+        if analysis_method == "matlab":
+            from lib.matlabenginehandler import MatlabEngineHandler
+
+            self.EngineHandler = MatlabEngineHandler()
+
     def addImages(self, extension=".tif"):
         # Set self.FileList
         if not self.getFileList(self.Path, extension):
@@ -110,6 +122,7 @@ class Image:
     def __init__(self, parent, filepath):
         self.Project = parent
         self.Path = filepath
+        self.Analysis = None
 
     @property
     def Filename(self) -> str:
@@ -187,7 +200,7 @@ class Image:
 
         # Add sample name in lower left corner
         filenameparts = self.Filename.split("_")
-        string = filenameparts[1] + " " + filenameparts[2]
+        string = filenameparts[0]  # + "_" + filenameparts[2]
         figure_axes.text(
             0.05 * self.Data.shape[0],  # x coordinate text
             0.95 * self.Data.shape[0],  # y coordinate text
@@ -200,6 +213,7 @@ class Image:
 if __name__ == "__main__":
     # MAIN()
 
+    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.11.16_FTS"
     baseDir = r"C:\Dev\python\sem\fibresem\testfiles\originals"
     fileExt = ".tif"
 
@@ -208,6 +222,10 @@ if __name__ == "__main__":
 
     for image in project.Images:
         image.loadImage()
+        image.Analysis = fibreanalysis.Analysis(
+            image, engineHandler=project.EngineHandler
+        )
+        image.Analysis.start()
         image.annotate()
         image.unloadImage()
 
