@@ -26,13 +26,26 @@ function res = simpoly(I, kwargs)
         kwargs.pixelsize = 1;
         kwargs.pixelsizeunit = 'px';
         kwargs.optimiseForThinFibres = true;
-        kwargs.outputpath = fullfile(pwd, 'conversion-out');
+        kwargs.filename = "image.png";
+        kwargs.outputpath = fullfile(pwd, 'fibre_analysis');
+        kwargs.load_externally = false;
+        kwargs.filepath = "";
     end
 
     fprintf("Received: %s\n", class(I));
 
-    % Take first channel
-    %I = I(:,:,1);
+    if kwargs.load_externally == true
+        fprintf("Loading image in MATLAB")
+        I = imread(kwargs.filepath);
+        barHeight = 0.11;
+        I = semCrop(I, barHeight, false);
+        %I = I(:,:,1);
+    end
+
+    if isempty(I)
+        res = 0
+        return
+    end
 
     pixelsize = kwargs.pixelsize;
     pixelsizeunit = kwargs.pixelsizeunit;
@@ -153,13 +166,12 @@ function res = simpoly(I, kwargs)
     %imwrite(BW, fullfile(outputpath{1}, 'segmentation', outputpath{2}));
     %%close all
 
-    %togglefig('Overlay')
-    %OL = imoverlay(Ihist, SK, 'red');
-    %imshow(OL)
-    %showMaskAsOverlay(0.3, BW, 'c')
-
-    %%set(gca,'LooseInset',get(gca,'TightInset'));
-    %saveas(gcf, fullfile(outputpath{1}, 'overlay', outputpath{2}));
+    togglefig('Overlay')
+    OL = imoverlay(Ihist, SK, 'red');
+    imshow(OL)
+    showMaskAsOverlay(0.3, BW, 'c')
+    savefig('overlay')
+    
     %%close all
     %%
 
@@ -195,7 +207,7 @@ function res = simpoly(I, kwargs)
     %ylim([0 inf]);
     %ylabel('Frequency');
     if conv > 0
-        xlabel('Diameter (?m)');
+    %    xlabel('Diameter (?m)');
         disp('Average Diameter (pixels)')
         ave = f.b1;
         avep = ave / conv;
@@ -210,7 +222,7 @@ function res = simpoly(I, kwargs)
         disp(stdev)
         dia_img = Dist.*SK * conv;
     else
-        xlabel('Diameter (pixels)');
+    %    xlabel('Diameter (pixels)');
         disp('Average Diameter (pixels)')
         ave = f.b1;
         disp(ave)
@@ -235,13 +247,14 @@ function res = simpoly(I, kwargs)
     %%
 
     %% End of SIMPoly Matlab Method Code
-                    
-    function saveimg(I, name)
-        name = sprintf('%s-matlab.png', name);
-        outputpath = fullfile(pwd, 'conversion-out', name);
+    
+    function savefig(subdir)
+        if ~exist(fullfile(outputpath, subdir), 'dir')
+            [status, msg, msgID] = mkdir(outputpath, subdir);
+        end
 
-        imwrite(I, outputpath);
-        fprintf('Saved image %s\n', name);
-    end
+        set(gca,'LooseInset',get(gca,'TightInset'));
+        saveas(gcf, fullfile(outputpath, subdir, kwargs.filename));
+    end        
 
 end

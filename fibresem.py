@@ -3,7 +3,7 @@ import tifffile
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib_scalebar.scalebar import ScaleBar
-
+import logging
 
 # import tkinter as tk
 # from tkinter import filedialog
@@ -93,9 +93,9 @@ class Project:
         self.Images = list()
 
         if analysis_method == "matlab":
-            from lib.matlabenginehandler import MatlabEngineHandler
+            from lib import MatlabEngineHandler
 
-            self.EngineHandler = MatlabEngineHandler()
+            self.engine_handler = MatlabEngineHandler.MatlabEngineHandler()
 
     def addImages(self, extension=".tif"):
         # Set self.FileList
@@ -117,22 +117,59 @@ class Project:
 
         return False
 
+    def run_diameter_analysis(self, method="matlab"):
+        """Runs fibre diameter analysis on every image"""
+
+        number_of_images = len(self.Images)
+
+        for i, image in enumerate(self.Images):
+            print(f"{i:02d} of {number_of_images:d}: {image.Filename}")
+            image.run_diameter_analysis(
+                method=method, engine_handler=self.engine_handler, load_externally=True
+            )
+
+    def analysis_summary(self):
+        """Get summary of analysis results"""
+
+        for image in self.Images:
+            print(f"{image.Filename}: ", end="")
+            if image.Analysis is not None:
+                if image.Analysis.result is not None:
+                    print(image.Analysis.result)
+
 
 class Image:
     def __init__(self, parent, filepath):
         self.Project = parent
         self.Path = filepath
         self.Analysis = None
+        self.Data = None
 
     @property
     def Filename(self) -> str:
         return os.path.split(self.Path)[-1]
 
-    def loadImage(self):
-        tifimg, tags = readtif.importtif(self.Path)
-        tifimg = crop_square(tifimg)
+    def loadImage(self) -> bool:
+        """Load actual image from file"""
+
+        try:
+            tifimg, tags = readtif.importtif(self.Path)
+        except Exception as err:
+            logging.error(f"Could not load {self.Filename}")
+            print(err)
+            return False
+
+        try:
+            tifimg = crop_square(tifimg)
+        except Exception as err:
+            logging.error(f"Could not crop {self.Filename}")
+            print(err)
+            return False
+
         self.Data = tifimg
         self.Meta = tags
+
+        return True
 
     def unloadImage(self):
         self.Data = None
@@ -209,24 +246,65 @@ class Image:
             size=dynFontSize * 0.7,  # size
         )
 
+    def run_diameter_analysis(
+        self, load_externally=False, method="matlab", engine_handler=None
+    ) -> bool:
+        """Runs diameter analysis"""
+
+        # Make sure image is loaded
+        if self.Data is None:
+            if not self.loadImage():
+                return False
+
+        # Make sure everything is loaded for the image analysis
+        if method == "matlab":
+            if engine_handler is None:
+                logging.warning("Matlab engine not started.")
+                return False
+
+        # Do analysis
+        self.Analysis = fibreanalysis.Analysis(
+            self,
+            engine_handler=engine_handler,
+            output_path=os.path.join(self.Project.Path, "output"),
+        )
+        self.Analysis.start(load_externally=load_externally)
+
+        # Free up memory
+        self.unloadImage()
+
+        return True
+
 
 if __name__ == "__main__":
-    # MAIN()
+    """Main file of fibresem"""
 
-    baseDir = r"I:\Projekte\Projekte\121250_PolyKARD\5-Data\01_Electrospinning\SEM\SEM 2021.11.16_FTS"
-    baseDir = r"C:\Dev\python\sem\fibresem\testfiles\originals"
+    # Setup logging
+    LOG_MSGFORMAT = "%(asctime)s - %(message)s"
+    LOG_TIMEFORMAT = "%H:%M:%S"
+    logging.basicConfig(
+        format=LOG_MSGFORMAT, datefmt=LOG_TIMEFORMAT, level=logging.DEBUG
+    )
+
+    baseDir = r"C:\Dev\python\sem\fibresem\testfiles\test1"
     fileExt = ".tif"
 
     project = Project(baseDir)
     project.addImages()
 
-    for image in project.Images:
+    project.run_diameter_analysis()
+
+    project.analysis_summary()
+
+    """for image in project.Images:
         image.loadImage()
         image.Analysis = fibreanalysis.Analysis(
-            image, engineHandler=project.EngineHandler
+            image,
+            engine_handler=project.engine_handler,
+            output_path=os.path.join(project.Path, "output"),
         )
         image.Analysis.start()
         image.annotate()
         image.unloadImage()
-
+    """
     outputFolderName = "cropped"
