@@ -22,6 +22,7 @@ class MatlabEngineHandler:
         # Set paths for matlab engine
         eng.addpath("lib", nargout=0)
         eng.addpath(os.path.join("lib", "matlab"), nargout=0)
+        eng.warning("off", "all", nargout=0)
 
         # Set Engine
         self.matlab_engine = eng

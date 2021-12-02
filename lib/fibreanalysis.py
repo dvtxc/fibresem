@@ -94,7 +94,12 @@ class Result:
             self.parse_matlab_result(matlab_result)
 
     def __str__(self):
-        return f"px-avg: {self.pixel_average} px-sdev: {self.pixel_sdev}"
+        return (
+            f"avgp: {self.pixel_average:.3f} px \t"
+            f"sdevp: {self.pixel_sdev:.3f} px \t"
+            f"avg: {self.average:.3f} {self.unit} \t"
+            f"sdev: {self.sdev:.3f} {self.unit} \t"
+        )
 
     def parse_matlab_result(self, matlab_result):
         """Parse and add the resulting struct returned by MATLAB"""
@@ -111,12 +116,24 @@ class Result:
     @property
     def average(self) -> float:
         """Returns the average converted to actual units"""
-        return self.pixel_average * self.parent.pixel_size_value
+        return self.pixel_average * self.conversion_factor
 
     @property
     def sdev(self) -> float:
-        return self.pixel_sdev * self.parent.pixel_size_value
+        return self.pixel_sdev * self.conversion_factor
 
     @property
     def diameters(self) -> list:
         return None
+
+    @property
+    def conversion_factor(self) -> float:
+        """Returns conversion factor"""
+
+        pixel_size_value = self.parent.pixel_size_value
+        pixel_size_unit = self.parent.pixel_size_unit
+
+        unit_exponent = {"um": -9, "nm": -9, "µm": -6, "mm": -3}
+        exponent = unit_exponent[pixel_size_unit] - unit_exponent[self.unit]
+
+        return pixel_size_value * 10 ** exponent

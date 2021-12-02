@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib_scalebar.scalebar import ScaleBar
 import logging
+import pandas as pd
 
 # import tkinter as tk
 # from tkinter import filedialog
@@ -86,8 +87,14 @@ def getFileListOnPath(path: str, filterExtension="") -> list:
     return fileList
 
 
+class Config:
+    def __init__(self):
+        """Configuration Class"""
+        pass
+
+
 class Project:
-    def __init__(self, path="."):
+    def __init__(self, path=".", config=None):
         self.Path = path
         self.FileList = list()
         self.Images = list()
@@ -98,12 +105,16 @@ class Project:
             self.engine_handler = MatlabEngineHandler.MatlabEngineHandler()
 
     def addImages(self, extension=".tif"):
+
+        logging.debug("Adding images.")
+
         # Set self.FileList
         if not self.getFileList(self.Path, extension):
-            # logging.warning("No files were found.")
+            logging.warning("No files were found.")
             return None
 
         for imagefilepath in self.FileList:
+            print(f"{imagefilepath}")
             self.Images.append(Image(self, imagefilepath))
 
     def getFileList(self, path=".", extension=".tif") -> bool:
@@ -123,19 +134,35 @@ class Project:
         number_of_images = len(self.Images)
 
         for i, image in enumerate(self.Images):
-            print(f"{i:02d} of {number_of_images:d}: {image.Filename}")
+            msg = f"Analyzing {i + 1:02d} of {number_of_images + 1:d}: {image.Filename}"
+            logging.info(msg)
+
             image.run_diameter_analysis(
                 method=method, engine_handler=self.engine_handler, load_externally=True
             )
 
-    def analysis_summary(self):
+    def print_analysis_summary(self):
         """Get summary of analysis results"""
 
         for image in self.Images:
-            print(f"{image.Filename}: ", end="")
-            if image.Analysis is not None:
-                if image.Analysis.result is not None:
-                    print(image.Analysis.result)
+            print(f"{image.Filename}: \t", end="")
+
+            if image.Analysis is not None and image.Analysis.result is not None:
+                print(image.Analysis.result)
+            else:
+                # No analysis
+                print("")
+
+    def analysis_summary(self):
+        """Summarise results in dict"""
+        index = [img.Filename for img in self.Images]
+        data = {"avgp": [img.Analysis.result.pixel_average for img in self.Images]}
+        return (index, data)
+
+    def export_analysis(self):
+        index, data = self.analysis_summary()
+
+        df = pd.DataFrame(data, index=index)
 
 
 class Image:
@@ -280,13 +307,13 @@ if __name__ == "__main__":
     """Main file of fibresem"""
 
     # Setup logging
-    LOG_MSGFORMAT = "%(asctime)s - %(message)s"
+    LOG_MSGFORMAT = "[%(asctime)s] %(message)s"
     LOG_TIMEFORMAT = "%H:%M:%S"
     logging.basicConfig(
         format=LOG_MSGFORMAT, datefmt=LOG_TIMEFORMAT, level=logging.DEBUG
     )
 
-    baseDir = r"C:\Dev\python\sem\fibresem\testfiles\test1"
+    baseDir = r"C:\dev\python\sem\fibresem\testfiles\test1"
     fileExt = ".tif"
 
     project = Project(baseDir)
@@ -294,7 +321,7 @@ if __name__ == "__main__":
 
     project.run_diameter_analysis()
 
-    project.analysis_summary()
+    project.print_analysis_summary()
 
     """for image in project.Images:
         image.loadImage()
