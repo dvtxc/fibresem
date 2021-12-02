@@ -1,14 +1,12 @@
+# External imports
 import os
-import tifffile
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib_scalebar.scalebar import ScaleBar
 import logging
 import pandas as pd
 
-# import tkinter as tk
-# from tkinter import filedialog
-
+# Internal imports
+from matplotlib_scalebar.scalebar import ScaleBar
 from lib import readtif
 from lib import fibreanalysis
 
@@ -63,9 +61,9 @@ class Project:
         self.Images = list()
 
         if analysis_method == "matlab":
-            from lib import MatlabEngineHandler
+            import lib.matlabenginehandler
 
-            self.engine_handler = MatlabEngineHandler.MatlabEngineHandler()
+            self.engine_handler = lib.matlabenginehandler.MatlabEngineHandler()
 
     def addImages(self, extension=".tif"):
         """Get a list of all images on project path and add those images to the project"""
@@ -122,7 +120,16 @@ class Project:
     def analysis_summary(self):
         """Summarise results in dict"""
         index = [img.Filename for img in self.Images]
-        data = {"avgp": [img.Analysis.result.pixel_average for img in self.Images]}
+        data = {
+            "avgp": [img.Analysis.result.pixel_average for img in self.Images],
+            "sdevp": [img.Analysis.result.pixel_sdev for img in self.Images],
+            "pixel_diameters": [
+                img.Analysis.result.pixel_diameters for img in self.Images
+            ],
+            "avg": [img.Analysis.result.average for img in self.Images],
+            "sdev": [img.Analysis.result.sdev for img in self.Images],
+            "diameters": [img.Analysis.result.diameters for img in self.Images],
+        }
         return (index, data)
 
     def export_analysis(self):
