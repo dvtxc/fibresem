@@ -61,7 +61,7 @@ from matplotlib.offsetbox import (
 from matplotlib.patches import Rectangle
 
 # Local modules.
-from matplotlib_scalebar.dimension import (
+from .dimension import (
     _Dimension,
     SILengthDimension,
     SILengthReciprocalDimension,

@@ -130,6 +130,10 @@ class Result:
     def conversion_factor(self) -> float:
         """Returns conversion factor"""
 
+        # Make sure pixel size unit is provided
+        if self.parent.pixel_size_unit is None:
+            return 0
+
         pixel_size_value = self.parent.pixel_size_value
         pixel_size_unit = self.parent.pixel_size_unit
 

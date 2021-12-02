@@ -1,4 +1,4 @@
-import tifffile
+from fibresem.io import tifffile
 
 # ZEISS SEM tag index for pixel size information
 TAG_INDEX = 34119
@@ -44,6 +44,6 @@ def readtags(filehandle):
 
         tif_tags["Pixel Size"] = "NaN"
         tif_tags["Pixel Size Value"] = 0
-        tif_tags["Pixel Size Unit"] = ""
+        tif_tags["Pixel Size Unit"] = None
 
     return tif_tags

@@ -6,9 +6,9 @@ import logging
 import pandas as pd
 
 # Internal imports
-from matplotlib_scalebar.scalebar import ScaleBar
-from lib import readtif
-from lib import fibreanalysis
+from fibresem.matplotlib_scalebar.scalebar import ScaleBar
+from fibresem.io import readtif
+from fibresem.analysis import fibreanalysis
 
 # from lib.fibreanalysis import Analysis
 # from lib.fibreanalysis import Result
@@ -61,9 +61,9 @@ class Project:
         self.Images = list()
 
         if analysis_method == "matlab":
-            import lib.matlabenginehandler
+            import fibresem.analysis.matlabenginehandler as matlabengine
 
-            self.engine_handler = lib.matlabenginehandler.MatlabEngineHandler()
+            self.engine_handler = matlabengine.MatlabEngineHandler()
 
     def addImages(self, extension=".tif"):
         """Get a list of all images on project path and add those images to the project"""
@@ -121,14 +121,18 @@ class Project:
         """Summarise results in dict"""
         index = [img.Filename for img in self.Images]
         data = {
+            "sample_name": [img.sample_name for img in self.Images],
+            "pixelSizeValue": [img.Analysis.pixel_size_value for img in self.Images],
+            "pixelSizeUnit": [img.Analysis.pixel_size_unit for img in self.Images],
             "avgp": [img.Analysis.result.pixel_average for img in self.Images],
             "sdevp": [img.Analysis.result.pixel_sdev for img in self.Images],
-            "pixel_diameters": [
-                img.Analysis.result.pixel_diameters for img in self.Images
-            ],
+            # "pixel_diameters": [
+            #    img.Analysis.result.pixel_diameters for img in self.Images
+            # ],
             "avg": [img.Analysis.result.average for img in self.Images],
             "sdev": [img.Analysis.result.sdev for img in self.Images],
-            "diameters": [img.Analysis.result.diameters for img in self.Images],
+            # "diameters": [img.Analysis.result.diameters for img in self.Images],
+            "unit": [img.Analysis.result.unit for img in self.Images],
         }
         return (index, data)
 
@@ -136,6 +140,19 @@ class Project:
         index, data = self.analysis_summary()
 
         df = pd.DataFrame(data, index=index)
+
+        output_path = os.path.join(self.Path, "export.xlsx")
+
+        logging.info(f"Exporting analysis to {output_path}")
+
+        try:
+            df.to_excel(output_path, "Fibre Analysis")
+        except Exception as err:
+            logging.error("Could not export fibre analysis")
+            print(err)
+            return False
+        else:
+            logging.info("Successfully exported.")
 
 
 class Image:
@@ -153,6 +170,10 @@ class Image:
     @property
     def Name(self) -> str:
         return "".join(self.Filename.split(".")[0:-1])
+
+    @property
+    def sample_name(self) -> str:
+        return self.Name.split("_")[0]
 
     def loadImage(self) -> bool:
         """Load actual image from file"""
@@ -237,6 +258,9 @@ class Image:
 
     def addScalebar(self, figure_axes):
         if self.Meta["Pixel Size"] == "NaN":
+            return None
+
+        if self.Meta["Pixel Size Unit"] is None:
             return None
 
         # Calculate dynamic border padding and font size, so the annotations are independent from image size
