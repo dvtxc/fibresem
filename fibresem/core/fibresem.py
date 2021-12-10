@@ -48,22 +48,18 @@ def getFileListOnPath(path: str, filterExtension="") -> list:
     return fileList
 
 
-class Config:
-    def __init__(self):
-        """Configuration Class"""
-        pass
-
-
 class Project:
     def __init__(self, path=".", config=None):
         self.Path = path
         self.FileList = list()
         self.Images = list()
 
+        """
         if analysis_method == "matlab":
             import fibresem.analysis.matlabenginehandler as matlabengine
 
             self.engine_handler = matlabengine.MatlabEngineHandler()
+        """
 
     def addImages(self, extension=".tif"):
         """Get a list of all images on project path and add those images to the project"""
@@ -232,6 +228,14 @@ class Image:
 
         img = self.Data
 
+        # Suppress Matplotlib debug output
+        logging.getLogger("matplotlib.font_manager").disabled = True
+
+        # Turn interactive plotting off
+        plt.ioff()
+
+        print(f"Annotating {self.Filename}", end="")
+
         # Create Matplotlib figure
         f = plt.figure(
             figsize=(img.shape[1] / 300, img.shape[0] / 300)
@@ -242,6 +246,7 @@ class Image:
 
         # Add annotations
         if addscalebar:
+            print(" - Adding scalebar, pixelsize = {}".format(self.Meta["Pixel Size"]))
             self.addScalebar(ax)
 
         if addsamplename:
@@ -258,9 +263,11 @@ class Image:
 
     def addScalebar(self, figure_axes):
         if self.Meta["Pixel Size"] == "NaN":
+            logging.warning("Could not read pixel size. Scalebar is not added.")
             return None
 
         if self.Meta["Pixel Size Unit"] is None:
+            logging.warning("Could not read pixel size. Scalebar is not added.")
             return None
 
         # Calculate dynamic border padding and font size, so the annotations are independent from image size
@@ -302,7 +309,7 @@ class Image:
             size=dynFontSize * 0.7,  # size
         )
 
-    def saveFigure(self, figureplot):
+    def saveFigure(self, figureplot) -> bool:
         # Save
         outputFolderName = OUTPUT_FOLDER_NAME
         plt = figureplot
@@ -315,6 +322,10 @@ class Image:
         targetPath = os.path.join(outputDirectory, outputFile)
         plt.savefig(targetPath, bbox_inches="tight", pad_inches=0, dpi=300)
         plt.close()
+
+        logging.debug(f"Output written to {targetPath}")
+
+        return True
 
     def run_diameter_analysis(
         self, load_externally=False, method="matlab", engine_handler=None
@@ -344,37 +355,3 @@ class Image:
         self.unloadImage()
 
         return True
-
-
-if __name__ == "__main__":
-    """Main file of fibresem"""
-
-    # Setup logging
-    LOG_MSGFORMAT = "[%(asctime)s] %(message)s"
-    LOG_TIMEFORMAT = "%H:%M:%S"
-    logging.basicConfig(
-        format=LOG_MSGFORMAT, datefmt=LOG_TIMEFORMAT, level=logging.DEBUG
-    )
-
-    baseDir = r"C:\dev\python\sem\fibresem\testfiles\test1"
-    fileExt = ".tif"
-
-    project = Project(baseDir)
-    project.addImages()
-
-    project.run_diameter_analysis()
-
-    project.print_analysis_summary()
-
-    """for image in project.Images:
-        image.loadImage()
-        image.Analysis = fibreanalysis.Analysis(
-            image,
-            engine_handler=project.engine_handler,
-            output_path=os.path.join(project.Path, "output"),
-        )
-        image.Analysis.start()
-        image.annotate()
-        image.unloadImage()
-    """
-    outputFolderName = "cropped"

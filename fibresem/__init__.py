@@ -1,16 +1,20 @@
 from fibresem.core.fibresem import Project
 from fibresem.core.fibresem import Image
+from fibresem.config import Config
+import fibresem.scripts
 
 
-def init(path="."):
+def init(config=Config(), script=""):
     """Initiate"""
 
-    project = Project(path)
+    project = Project(config.project_path)
 
     project.addImages()
 
-    project.run_diameter_analysis()
+    tasks = script.split(" ")
 
-    project.print_analysis_summary()
-
-    project.export_analysis()
+    for task in tasks:
+        if task == "crop":
+            fibresem.scripts.annotate(project, config)
+        elif task == "diam":
+            fibresem.scripts.diameter_analysis(project, config)

@@ -16,8 +16,11 @@ def main():
         format=LOG_MSGFORMAT, datefmt=LOG_TIMEFORMAT, level=logging.DEBUG
     )
 
+    # Config
+    config = fs.Config()
+    config.project_path = r"C:\Dev\python\sem\fibresem\testfiles\originals"
+
     # Parse project path
-    project_path = r"C:\dev\python\sem\fibresem\testfiles\test1"
     idx = 0
 
     try:
@@ -26,13 +29,18 @@ def main():
         logging.warning("No path provided, using current working folder.")
     else:
         if len(sys.argv) > idx:
-            project_path = sys.argv[idx + 1]
+            config.project_path = sys.argv[idx + 1]
 
     # Parse flags
-    if "-crop" in sys.argv:
-        pass
+    script = ""
 
-    fs.init(path=project_path)
+    if "-crop" in sys.argv:
+        script += "crop "
+
+    if "-diam" in sys.argv:
+        script += "diam "
+
+    fs.init(config=config, script=script)
 
 
 if __name__ == "__main__":
