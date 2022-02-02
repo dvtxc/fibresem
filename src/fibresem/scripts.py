@@ -1,6 +1,6 @@
 from fibresem.core.fibresem import Project
 from fibresem.core.fibresem import Image
-from fibresem.config import Config
+from fibresem.core.config import Config
 
 
 def annotate(project, config=Config()):
