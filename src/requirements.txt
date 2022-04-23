@@ -1,0 +1,7 @@
+imagecodecs
+lxml
+matplotlib
+numpy
+pandas
+pytest
+scipy
