@@ -4,6 +4,23 @@
 
 A small python repo to analyse SEM images of fibrous materials.
 
+## Requirements
+
+The diameter analysis requires the [MATLAB® Engine API for Python](https://mathworks.com/help/matlab/matlab-engine-for-python.html). Since this repository is written in Python 3.9, this requires **MATLAB® 2021b** or newer.
+
+## Installation
+
+Install the python fibresem module:
+
+    $ pip install fibresem
+
+Install the MATLAB® Engine API for Python:
+
+    $ cd {matlabroot}/extern/engines/python
+    $ python setup.py build --build-base=$HOME/tmp/build install --user
+
+Remove ``--user`` flag for installation within environment.
+
 ## Usage
 
     python -m fibresem [OPTIONS] INPUT_PATH COMMAND1 [ARGS]...
@@ -40,15 +57,6 @@ Diameter analysis can be done with ``diam`` command using the Simpoly algorithm 
 Additional options:
 
 * ``--thick-opt/--no-thick-opt`` default: false
-
-### Installation
-
-Please install the matlab module as follows:
-
-    $ cd {matlabroot}/extern/engines/python
-    $ python setup.py build --build-base=$HOME/tmp/build install --user
-
-Remove ``--user`` flag for installation within environment.
 
 ## Options
 
