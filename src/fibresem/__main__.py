@@ -27,12 +27,12 @@ logging.getLogger("PIL").setLevel(logging.WARNING)
 
 
 @click.group(chain=True)
-@click.option('-v', '--verbose', is_flag=True)
-@click.argument('input_path', cls=PerCommandArgWantSubCmdHelp)
+@click.option("-v", "--verbose", is_flag=True)
+@click.argument("input_path", cls=PerCommandArgWantSubCmdHelp)
 @click.pass_context
-def cli(context = None, verbose = False, input_path = None):
+def cli(context=None, verbose=False, input_path=None):
     """Simple tool to process and manipulate SEM images of fibrous mats
-    
+
     To get help for a specific command, e.g. 'diam', use:
         fibresem diam --help"""
 
@@ -70,11 +70,12 @@ def process_pipeline(processors, verbose, input_path):
     logging.info("Process exited.")
 
 
-@cli.command('rename')
+@cli.command("rename")
 @click.pass_context
-@click.argument('overview_file')
+@click.argument("overview_file")
 def auto_rename(ctx, overview_file=""):
     """auto_rename"""
+
     def processor(prj):
         """Run the auto renamer"""
 
@@ -83,23 +84,31 @@ def auto_rename(ctx, overview_file=""):
         success = False
 
         try:
-            success = fibresem.addons.renamer.run(project=prj, overview_file=overview_file)
+            success = fibresem.addons.renamer.run(
+                project=prj, overview_file=overview_file
+            )
         except FileNotFoundError as err:
             logging.warning(err)
-            
+
         if not success:
             logging.warning("No files were renamed!")
 
         return prj
+
     return processor
 
 
-@cli.command('crop')
+@cli.command("crop")
+@click.option("-r", "--rotate", count=True)
 @click.pass_context
-def annotate(ctx):
+def annotate(ctx, rotate):
     """annotate"""
+
     def processor(project: Project):
         """Crop and annotate all images"""
+
+        # Set number of rotations
+        project.config.set("general", "annotate_rotate", rotate)
 
         num_images = len(project.Images)
         logging.info(f"Running annotate script on {num_images} images.")
@@ -108,14 +117,16 @@ def annotate(ctx):
             image.annotate()
 
         return project
+
     return processor
 
 
-@cli.command('diam')
+@cli.command("diam")
 @click.pass_context
-@click.option('--thick-opt/--no-thick-opt', default=False)
+@click.option("--thick-opt/--no-thick-opt", default=False)
 def diameter_analysis(ctx, thick_opt):
     """diameter_analysis"""
+
     def processor(project: Project):
         """Run diameter analysis on all pictures"""
 
@@ -132,6 +143,7 @@ def diameter_analysis(ctx, thick_opt):
         project.export_mat()
 
         return project
+
     return processor
 
 

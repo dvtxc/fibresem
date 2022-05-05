@@ -60,9 +60,9 @@ def get_file_list_on_path(path: str, filterExtension="") -> list:
 
 class Project:
     """Project(path, config)
-    
+
     This class contains the images of the project
-    
+
     Attributes:
     path
     file_list
@@ -94,7 +94,7 @@ class Project:
 
     def append_matlabengine(self) -> bool:
         """Starts and appends matlab engine"""
-        #import fibresem.analysis.matlabenginehandler as matlabengine
+        # import fibresem.analysis.matlabenginehandler as matlabengine
 
         self.engine_handler = analysis_engines.MatlabEngine()
         return self.engine_handler.is_running
@@ -143,12 +143,15 @@ class Project:
 
             # Append engine and start engine (if necessary)
             if not self.append_matlabengine():
-                logging.warning("Engine Handler could not be appended to project. Aborting Diameter Analysis")
+                logging.warning(
+                    "Engine Handler could not be appended to project. Aborting Diameter Analysis"
+                )
                 return
 
         logging.info("Starting diameter analysis.")
         logging.info(
-            "Diameter analysis parameter 'optimise_for_thin_fibres' = %s", self.config.get('general', 'optimise_for_thin_fibres')
+            "Diameter analysis parameter 'optimise_for_thin_fibres' = %s",
+            self.config.get("general", "optimise_for_thin_fibres"),
         )
 
         # Run diameter analysis on every image
@@ -161,7 +164,7 @@ class Project:
                 engine_handler=self.engine_handler,
                 load_externally=True,
                 config=self.config,
-                verbose=verbose
+                verbose=verbose,
             )
 
     def print_analysis_summary(self):
@@ -180,18 +183,18 @@ class Project:
         """Summarise results in dict"""
         index = [img.Filename for img in self.Images]
         data = {
-            "sample_name":      [img.sample_name for img in self.Images],
-            "pixelSizeValue":   [img.Analysis.pixel_size_value for img in self.Images],
-            "pixelSizeUnit":    [img.Analysis.pixel_size_unit for img in self.Images],
-            "avgp":             [img.Analysis.result.pixel_average for img in self.Images],
-            "sdevp":            [img.Analysis.result.pixel_sdev for img in self.Images],
+            "sample_name": [img.sample_name for img in self.Images],
+            "pixelSizeValue": [img.Analysis.pixel_size_value for img in self.Images],
+            "pixelSizeUnit": [img.Analysis.pixel_size_unit for img in self.Images],
+            "avgp": [img.Analysis.result.pixel_average for img in self.Images],
+            "sdevp": [img.Analysis.result.pixel_sdev for img in self.Images],
             # "pixel_diameters": [
             #    img.Analysis.result.pixel_diameters for img in self.Images
             # ],
-            "avg":              [img.Analysis.result.average for img in self.Images],
-            "sdev":             [img.Analysis.result.sdev for img in self.Images],
+            "avg": [img.Analysis.result.average for img in self.Images],
+            "sdev": [img.Analysis.result.sdev for img in self.Images],
             # "diameters": [img.Analysis.result.diameters for img in self.Images],
-            "unit":             [img.Analysis.result.unit for img in self.Images],
+            "unit": [img.Analysis.result.unit for img in self.Images],
         }
         return (index, data)
 
@@ -199,7 +202,7 @@ class Project:
         """Quick function to export to MATLAB (.mat) file"""
 
         try:
-            import scipy.io as sio  #pylint disable=import-outside-toplevel
+            import scipy.io as sio  # pylint disable=import-outside-toplevel
         except ModuleNotFoundError:
             logging.error("Scipy module not found.")
             print("Please install scipy: python -m pip install scipy")
@@ -239,7 +242,7 @@ class Project:
             except UnicodeEncodeError:
                 arr[i]["unit"] = image.Analysis.result.unit.encode("utf-8")
                 arr[i]["pixelSizeUnit"] = image.Analysis.pixel_size_unit.encode("utf-8")
-                
+
         output_path = os.path.join(self.Path, "export.mat")
         sio.savemat(output_path, {"results": arr})
 
@@ -264,7 +267,6 @@ class Project:
             return False
         else:
             logging.info("Successfully exported.")
-
 
 
 class Image:
@@ -355,6 +357,12 @@ class Image:
 
         img = self.Data
 
+        # Rotate
+        num_rotations = self.Project.config.get("general", "annotate_rotate")
+        if num_rotations != 0:
+            logging.debug("-- Rotating image")
+            img = np.rot90(img, k=num_rotations)
+
         # Suppress Matplotlib debug output
         logging.getLogger("matplotlib.font_manager").disabled = True
 
@@ -371,7 +379,9 @@ class Image:
 
         # Add annotations
         if add_scalebar:
-            logging.debug("-- Adding scalebar, pixelsize = {}".format(self.Meta["Pixel Size"]))
+            logging.debug(
+                "-- Adding scalebar, pixelsize = {}".format(self.Meta["Pixel Size"])
+            )
             self.add_scalebar(ax)
 
         if add_sample_name:
@@ -449,12 +459,12 @@ class Image:
         targetPath = os.path.join(outputDirectory, outputFile)
 
         logging.debug(f"-- Writing output to: {outputFile}")
-        
+
         try:
             plt.savefig(targetPath, bbox_inches="tight", pad_inches=0, dpi=300)
         except OSError as err:
             logging.warning(err)
-        else:      
+        else:
             logging.debug(f"-- Output written")
 
         plt.close()
@@ -462,7 +472,12 @@ class Image:
         return True
 
     def run_diameter_analysis(
-        self, load_externally=False, method="matlab", engine_handler=None, config=None, verbose=False
+        self,
+        load_externally=False,
+        method="matlab",
+        engine_handler=None,
+        config=None,
+        verbose=False,
     ) -> bool:
         """Runs diameter analysis"""
 
@@ -474,7 +489,9 @@ class Image:
         # Make sure everything is loaded for the image analysis
         if method == "matlab":
             if engine_handler is None:
-                logging.warning("Tried to run diameter analysis without engine handler.")
+                logging.warning(
+                    "Tried to run diameter analysis without engine handler."
+                )
                 return False
 
         # Do analysis

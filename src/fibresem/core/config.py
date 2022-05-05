@@ -19,6 +19,7 @@ class Config(configparser.ConfigParser):
                 "annotate_add_samplename": True,
                 "annotate_crop": True,
                 "annotate_crop_ratio": 1.0,
+                "annotate_rotate": 0,
                 "sem_bar_height": 0.11,
                 "output_folder_name": "cropped",
                 "keep_in_memory": False,
