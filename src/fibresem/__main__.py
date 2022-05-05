@@ -3,10 +3,7 @@ FIBRESEM
 """
 
 # External
-import argparse
-from email.policy import default
 import logging
-from tabnanny import verbose
 import click
 
 # Internal
@@ -137,7 +134,7 @@ def diameter_analysis(ctx, thick_opt):
         else:
             project.config.set("general", "optimise_for_thin_fibres", "True")
 
-        project.run_diameter_analysis(verbose=verbose)
+        project.run_diameter_analysis()
         project.print_analysis_summary()
         project.export_analysis()
         project.export_mat()
