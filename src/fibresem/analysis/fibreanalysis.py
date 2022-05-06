@@ -29,7 +29,8 @@ class Analysis:
         self.params = {
             "optimise_for_thin_fibres": config.getboolean(
                 "general", "optimise_for_thin_fibres"
-            )
+            ),
+            "verbose": config.getboolean("general", "verbose")
         }
 
         self.method = "simpoly-matlab"
@@ -104,15 +105,31 @@ class Result:
             return np.nan
 
         # Make sure pixel size unit is provided
-        if self.parent.pixel_size_unit is None:
+        if (self.pixel_size_unit is None or self.pixel_size_unit == ""):
             return np.nan
 
-        pixel_size_value = self.parent.pixel_size_value
-        pixel_size_unit = self.parent.pixel_size_unit
+        pixel_size_value = self.pixel_size_value
+        pixel_size_unit = self.pixel_size_unit
 
         unit_exponent = {"um": -9, "nm": -9, "µm": -6, "mm": -3}
         exponent = unit_exponent[pixel_size_unit] - unit_exponent[self.unit]
 
         return pixel_size_value * 10**exponent
+
+    @property
+    def pixel_size_value(self) -> float:
+        """Return the pixel size value in px/unit"""
+        if self.parent is None:
+            return np.nan
+
+        return self.parent.pixel_size_value
+
+    @property
+    def pixel_size_unit(self) -> str:
+        """Return the pixel size unit"""
+        if self.parent is None:
+            return ""
+
+        return self.parent.pixel_size_unit
 
 

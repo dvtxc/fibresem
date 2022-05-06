@@ -1,5 +1,5 @@
 # External imports
-from cmath import log
+
 import os
 import logging
 
@@ -80,12 +80,6 @@ class Project:
 
         self.engine_handler = None
 
-        """
-        if analysis_method == "matlab":
-            import fibresem.analysis.matlabenginehandler as matlabengine
-
-            self.engine_handler = matlabengine.MatlabEngineHandler()
-        """
 
     def __len__(self):
         """Override len(), return number of images."""
@@ -178,21 +172,43 @@ class Project:
 
     def analysis_summary(self):
         """Summarise results in dict"""
+        variables = ["pixel_size_value","pixel_size_unit","pixel_average","pixel_sdev","average","sdev","unit"]
+
         index = [img.Filename for img in self.Images]
+
+        # Initialise dict
+        data = {"sample_name": []}
+        for var in variables:
+            data[var] = []
+
+        # Fill dict
+        for img in self.Images:
+            data["sample_name"].append(img.sample_name)
+
+            # Create empty result dataclass as fallback
+            result = fibreanalysis.Result()
+
+            # Retrieve result
+            if img.Analysis is not None:
+                if img.Analysis.result is not None:
+                    result = img.Analysis.result
+
+            for var in variables:
+                data[var].append(getattr(result, var))
+     
+
+        """
         data = {
             "sample_name":      [img.sample_name for img in self.Images],
-            "pixelSizeValue":   [img.Analysis.pixel_size_value for img in self.Images],
-            "pixelSizeUnit":    [img.Analysis.pixel_size_unit for img in self.Images],
-            "avgp":             [img.Analysis.result.pixel_average for img in self.Images],
-            "sdevp":            [img.Analysis.result.pixel_sdev for img in self.Images],
-            # "pixel_diameters": [
-            #    img.Analysis.result.pixel_diameters for img in self.Images
-            # ],
-            "avg":              [img.Analysis.result.average for img in self.Images],
-            "sdev":             [img.Analysis.result.sdev for img in self.Images],
-            # "diameters": [img.Analysis.result.diameters for img in self.Images],
-            "unit":             [img.Analysis.result.unit for img in self.Images],
+            "pixelSizeValue":   [img.Analysis.pixel_size_value for img in self.Images if img.Analysis is not None],
+            "pixelSizeUnit":    [img.Analysis.pixel_size_unit for img in self.Images if img.Analysis is not None],
+            "avgp":             [img.Analysis.result.pixel_average for img in self.Images if img.Analysis is not None],
+            "sdevp":            [img.Analysis.result.pixel_sdev for img in self.Images if img.Analysis is not None],
+            "avg":              [img.Analysis.result.average for img in self.Images if img.Analysis is not None],
+            "sdev":             [img.Analysis.result.sdev for img in self.Images if img.Analysis is not None],
+            "unit":             [img.Analysis.result.unit for img in self.Images if img.Analysis is not None],
         }
+        """
         return (index, data)
 
     def export_mat(self):
@@ -206,16 +222,16 @@ class Project:
             return False
 
         dtypes = [
-            ("name", "S128"),
-            ("pixelSizeValue", np.double),
-            ("pixelSizeUnit", "U10"),
-            ("avgp", np.double),
-            ("sdevp", np.double),
-            ("avg", np.double),
+            ("sample_name", "S128"),
+            ("pixel_size_value", np.double),
+            ("pixel_size_unit", "U10"),
+            ("pixel_average", np.double),
+            ("pixel_sdev", np.double),
+            ("average", np.double),
             ("sdev", np.double),
             ("unit", "U10"),
-            ("diamp", "O"),
-            ("actualDiameters", "O"),
+            ("pixel_diameters", "O"),
+            ("diameters", "O"),
         ]
 
         num_images = len(self.Images)
@@ -223,22 +239,28 @@ class Project:
         arr = np.zeros((num_images,), dtype=dtypes)
 
         for i, image in enumerate(self.Images):
-            arr[i]["name"] = image.sample_name
-            arr[i]["pixelSizeValue"] = image.Analysis.pixel_size_value
-            arr[i]["avgp"] = image.Analysis.result.pixel_average
-            arr[i]["sdevp"] = image.Analysis.result.pixel_sdev
-            arr[i]["avg"] = image.Analysis.result.average
+
+            # If no analysis has been performed, skip
+            if image.Analysis is None:
+                continue
+
+            # Store analysis data
+            arr[i]["sample_name"] = image.sample_name
+            arr[i]["pixel_size_value"] = image.Analysis.pixel_size_value
+            arr[i]["pixel_average"] = image.Analysis.result.pixel_average
+            arr[i]["pixel_sdev"] = image.Analysis.result.pixel_sdev
+            arr[i]["average"] = image.Analysis.result.average
             arr[i]["sdev"] = image.Analysis.result.sdev
-            arr[i]["diamp"] = image.Analysis.result.pixel_diameters
-            arr[i]["actualDiameters"] = image.Analysis.result.diameters
+            arr[i]["pixel_diameters"] = image.Analysis.result.pixel_diameters
+            arr[i]["diameters"] = image.Analysis.result.diameters
 
             # Make sure we can handle µm
             try:
-                arr[i]["pixelSizeUnit"] = image.Analysis.pixel_size_unit
+                arr[i]["pixel_size_unit"] = image.Analysis.pixel_size_unit
                 arr[i]["unit"] = image.Analysis.result.unit
             except UnicodeEncodeError:
                 arr[i]["unit"] = image.Analysis.result.unit.encode("utf-8")
-                arr[i]["pixelSizeUnit"] = image.Analysis.pixel_size_unit.encode("utf-8")
+                arr[i]["pixel_size_unit"] = image.Analysis.pixel_size_unit.encode("utf-8")
                 
         output_path = os.path.join(self.Path, "export.mat")
         sio.savemat(output_path, {"results": arr})

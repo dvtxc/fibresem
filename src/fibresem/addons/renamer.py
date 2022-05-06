@@ -49,7 +49,7 @@ def format_new_name(props: dict) -> str:
 
     # Sample name
     if "sample" in props:
-        new_name.append(props["sample"])
+        new_name.append(str(props["sample"]))
 
     # Image Width
     if "width" in props:
@@ -72,7 +72,7 @@ def format_new_name(props: dict) -> str:
     # Remarks
     if "remarks" in props:
         if props["remarks"] and props["remarks"] != "-":
-            new_name.append(props["remarks"])
+            new_name.append(str(props["remarks"]))
 
     return "_".join(new_name)
 
@@ -91,7 +91,13 @@ def rename_project_files(project: Project, overview: pd.DataFrame, **kwargs) -> 
     for i, image in enumerate(project.Images):
         # Construct new name
         props = overview.iloc[i].to_dict()
-        new_name = format_new_name(props)
+
+        try:
+            new_name = format_new_name(props)
+        except TypeError as err:
+            logging.warning("Could not parse name")
+            print(f"Did not parse: {image.Filename}, reason: {err}")
+            new_name = image.Filename
 
         # Rename
         rename(image, new_name, **kwargs)

@@ -70,7 +70,8 @@ Remove --user flag for installation within environment"""
             return False
 
         # Set paths for matlab engine
-        eng.addpath(os.path.join("fibresem", "analysis", "matlab"), nargout=0)
+        current_dir = os.path.dirname(__file__)
+        eng.addpath(os.path.join(current_dir, "matlab"), nargout=0)
         eng.warning("off", "all", nargout=0)
 
         # Set Engine
@@ -92,7 +93,7 @@ Remove --user flag for installation within environment"""
         else:
             # Convert ndarray to MATLAB uint8 array
             # Can be slow
-            print("Converting Data ...")
+            logging.debug("Converting Data ...")
             imgdata_matlab_array = matlab.uint8(analysis.parent.Data.tolist())
 
         # Handle no pixel size
@@ -113,6 +114,7 @@ Remove --user flag for installation within environment"""
             "outputpath", analysis.output_path,
             "load_externally", load_externally,
             "filepath", analysis.image_path,
+            "verbose", analysis.params["verbose"],
             nargout=1,
         )
         # fmt: on
