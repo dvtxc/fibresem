@@ -3,11 +3,9 @@ FIBRESEM
 """
 
 # External
-import argparse
-from email.policy import default
 import logging
-from tabnanny import verbose
 import click
+
 
 # Internal
 from fibresem.core.config import Config
@@ -54,6 +52,10 @@ def process_pipeline(processors, verbose, input_path):
     config = Config()
     config.project_path = r""
 
+    # Set verbosity level in config obj (will be passed to MATLAB later on)
+    if verbose:
+        config.set("general", "verbose", "True")
+
     # Parse project path
     config.project_path = input_path
 
@@ -64,7 +66,7 @@ def process_pipeline(processors, verbose, input_path):
 
     # Go through commands
     for i, processor in enumerate(processors):
-        logging.info(f"Running command {i} of {len(processors)}")
+        logging.info(f"Running command {i + 1} of {len(processors)}")
         project = processor(project)
 
     logging.info("Process exited.")
@@ -126,7 +128,7 @@ def diameter_analysis(ctx, thick_opt):
         else:
             project.config.set("general", "optimise_for_thin_fibres", "True")
 
-        project.run_diameter_analysis(verbose=verbose)
+        project.run_diameter_analysis()
         project.print_analysis_summary()
         project.export_analysis()
         project.export_mat()
@@ -135,5 +137,5 @@ def diameter_analysis(ctx, thick_opt):
     return processor
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     cli()

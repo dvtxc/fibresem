@@ -11,7 +11,8 @@ class MatlabEngineHandler:
         self.start()
 
     def start(self) -> bool:
-        # Start Matlab Engine
+        """Start Matlab Engine"""
+        
         logging.info("Starting Matlab Engine ...")
 
         try:

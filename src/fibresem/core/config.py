@@ -2,6 +2,8 @@ import configparser
 
 
 class Config(configparser.ConfigParser):
+    """Config Class"""
+
     def __init__(self):
         """Configuration Class"""
         super().__init__()
@@ -23,6 +25,7 @@ class Config(configparser.ConfigParser):
                 "output_folder_name": "cropped",
                 "keep_in_memory": False,
                 "optimise_for_thin_fibres": True,
+                "verbose": False,
             }
         }
 

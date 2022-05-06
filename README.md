@@ -14,7 +14,11 @@ Install the python fibresem module:
 
     $ pip install fibresem
 
-Install the MATLAB® Engine API for Python:
+The module can now be run as follows:
+
+    $ py -m fibresem
+
+To use the fibre diameter analysis, install the MATLAB® Engine API for Python as follows:
 
     $ cd {matlabroot}/extern/engines/python
     $ python setup.py build --build-base=$HOME/tmp/build install --user
@@ -33,9 +37,16 @@ To get help for a specific command, e.g. ``diam``, use:
 
     fibresem diam --help
 
-## Auto-renaming
+Options:
 
-    py -m fibresem INPUT_PATH rename OVERVIEW_FILE
+* ``-v, --verbose``
+* ``--help``
+
+Commands:
+* ``crop``    annotate
+* ``diam``    diameter_analysis
+* ``rename``  auto_rename
+
 
 ## Annotating
 
@@ -58,16 +69,17 @@ Additional options:
 
 * ``--thick-opt/--no-thick-opt`` default: false
 
-## Options
 
-    Options:
-    -v, --verbose
-    --help         Show this message and exit.
+## Auto-renaming
 
-    Commands:
-    crop    annotate
-    diam    diameter_analysis
-    rename  auto_rename
+    py -m fibresem INPUT_PATH rename OVERVIEW_FILE
+
+The ``OVERVIEW_FILE`` should have a structure similar to the following:
+
+    img	dish	pos	width	remarks	sample
+    1	1	2	20	-	PU.088
+    2	1	2	100	-	PU.088
+    3	1	2	200	-	PU.088
 
 
 ## References
