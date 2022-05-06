@@ -195,20 +195,7 @@ class Project:
 
             for var in variables:
                 data[var].append(getattr(result, var))
-     
 
-        """
-        data = {
-            "sample_name":      [img.sample_name for img in self.Images],
-            "pixelSizeValue":   [img.Analysis.pixel_size_value for img in self.Images if img.Analysis is not None],
-            "pixelSizeUnit":    [img.Analysis.pixel_size_unit for img in self.Images if img.Analysis is not None],
-            "avgp":             [img.Analysis.result.pixel_average for img in self.Images if img.Analysis is not None],
-            "sdevp":            [img.Analysis.result.pixel_sdev for img in self.Images if img.Analysis is not None],
-            "avg":              [img.Analysis.result.average for img in self.Images if img.Analysis is not None],
-            "sdev":             [img.Analysis.result.sdev for img in self.Images if img.Analysis is not None],
-            "unit":             [img.Analysis.result.unit for img in self.Images if img.Analysis is not None],
-        }
-        """
         return (index, data)
 
     def export_mat(self):
