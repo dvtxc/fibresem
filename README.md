@@ -65,7 +65,7 @@ Cropping and annotating can be done with the ``crop`` command.
 
 ### Diameter analysis
 
-Diameter analysis can be done with ``diam`` command based on the Simpoly algorithm developed by Murphy et al.[[1]](#1) Requires MATLAB® 2021b or newer for the integration with the integration with Python through the [MATLAB® Engine API for Python](https://mathworks.com/help/matlab/matlab-engine-for-python.html).
+Diameter analysis can be done with ``diam`` command based on the Simpoly algorithm developed by Murphy et al.[[1]](#1) Requires MATLAB® 2021b or newer for the integration with Python through the [MATLAB® Engine API for Python](https://mathworks.com/help/matlab/matlab-engine-for-python.html).
 
     py -m fibresem INPUT_PATH diam [options]
 
