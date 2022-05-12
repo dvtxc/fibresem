@@ -65,7 +65,7 @@ Cropping and annotating can be done with the ``crop`` command.
 
 ### Diameter analysis
 
-Diameter analysis can be done with ``diam`` command using the Simpoly algorithm developed by Murphy et al.[[1]](#1) Requires MATLAB.
+Diameter analysis can be done with ``diam`` command based on the Simpoly algorithm developed by Murphy et al.[[1]](#1) Requires MATLAB® 2021b or newer for the integration with the integration with Python through the [MATLAB® Engine API for Python](https://mathworks.com/help/matlab/matlab-engine-for-python.html).
 
     py -m fibresem INPUT_PATH diam [options]
 
@@ -73,6 +73,11 @@ Additional options:
 
 * ``--thick-opt/--no-thick-opt`` default: false
 
+By default, the tiff image is loaded by MATLAB®, since this is faster than converting an uint from Python through the API.
+
+The diameter analysis algorithm performs a number of morphological operations to acquire a segmented binary image. The `--thick-opt` flag will thicken the skeleton and remove branchpoints in an additional cleaning step. This option is recommended, when fibres have diameters over 20 px and display significantly contrasting shading (i.e. when using a secondary electron detector). Otherwise, leave the flag out for the default option. The defaults work best for fibres with diameters between 5 and ~30 px.
+
+Pixel sizes are extracted from the ZEISS tiff tags.
 
 ### Auto-renaming
 
