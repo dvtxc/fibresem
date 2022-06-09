@@ -14,6 +14,7 @@ class Config(configparser.ConfigParser):
     def load_defaults(self):
         """Load default configuration"""
 
+        # Define defaults
         defaults = {
             "general": {
                 "analysis_method": "simpoly-matlab",
@@ -26,7 +27,26 @@ class Config(configparser.ConfigParser):
                 "keep_in_memory": False,
                 "optimise_for_thin_fibres": True,
                 "verbose": False,
-            }
+            },
+            "annotate": {
+                "add_scalebar": True,
+                "add_samplename": True,
+                "samplename_separator": "_",
+                "samplename_parts": "0",
+            },
+            "crop": {
+                "ratio": 1.0,
+                "sem_bar_height": 0.11,
+            },
+            "analysis": {
+                "engine": "simpoly-matlab",
+            },
+            "simpoly-matlab-engine": {
+                "load_externally": True,
+                "optimise_for_thin_fibres": True,
+                "verbose_image_output_path": "analysis",
+            },
         }
 
+        # Load in defaults
         self.read_dict(defaults)

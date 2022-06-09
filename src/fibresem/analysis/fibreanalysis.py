@@ -30,7 +30,7 @@ class Analysis:
             "optimise_for_thin_fibres": config.getboolean(
                 "general", "optimise_for_thin_fibres"
             ),
-            "verbose": config.getboolean("general", "verbose")
+            "verbose": config.getboolean("general", "verbose"),
         }
 
         self.method = "simpoly-matlab"
@@ -39,7 +39,6 @@ class Analysis:
         self.output_path = output_path
 
         self.result = None
-
 
     def start(self, load_externally=False) -> bool:
         """Start analysis"""
@@ -57,7 +56,6 @@ class Analysis:
         # Return success
         return True
 
-  
 
 @dataclass
 class Result:
@@ -71,7 +69,6 @@ class Result:
         self.pixel_diameters = {}
 
         self.unit = "µm"
-
 
     def __str__(self):
         return (
@@ -105,16 +102,19 @@ class Result:
             return np.nan
 
         # Make sure pixel size unit is provided
-        if (self.pixel_size_unit is None or self.pixel_size_unit == ""):
+        if self.pixel_size_unit is None or self.pixel_size_unit == "":
             return np.nan
 
-        pixel_size_value = self.pixel_size_value
-        pixel_size_unit = self.pixel_size_unit
+        # Calculate exponent difference
+        unit_exponent = {"nm": -9, "um": -6, "µm": -6, "mm": -3, "m": 0}
+        try:
+            exponent = unit_exponent[self.pixel_size_unit] - unit_exponent[self.unit]
+        except KeyError:
+            logging.warning("Unknown pixel size unit.")
+            return np.nan
 
-        unit_exponent = {"um": -9, "nm": -9, "µm": -6, "mm": -3}
-        exponent = unit_exponent[pixel_size_unit] - unit_exponent[self.unit]
-
-        return pixel_size_value * 10**exponent
+        # Return conversion factor
+        return self.pixel_size_value * 10**exponent
 
     @property
     def pixel_size_value(self) -> float:
@@ -131,5 +131,3 @@ class Result:
             return ""
 
         return self.parent.pixel_size_unit
-
-
