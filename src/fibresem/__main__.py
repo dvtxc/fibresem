@@ -25,12 +25,12 @@ logging.getLogger("PIL").setLevel(logging.WARNING)
 
 
 @click.group(chain=True)
-@click.option('-v', '--verbose', is_flag=True)
-@click.argument('input_path', cls=PerCommandArgWantSubCmdHelp)
+@click.option("-v", "--verbose", is_flag=True)
+@click.argument("input_path", cls=PerCommandArgWantSubCmdHelp)
 @click.pass_context
-def cli(context = None, verbose = False, input_path = None):
+def cli(context=None, verbose=False, input_path=None):
     """Simple tool to process and manipulate SEM images of fibrous mats
-    
+
     To get help for a specific command, e.g. 'diam', use:
         fibresem diam --help"""
 
@@ -61,8 +61,6 @@ def process_pipeline(processors, verbose, input_path):
 
     # Start a project
     project = Project(path=config.project_path, config=config)
-    if not project.add_images():
-        return
 
     # Go through commands
     for i, processor in enumerate(processors):
@@ -72,11 +70,31 @@ def process_pipeline(processors, verbose, input_path):
     logging.info("Process exited.")
 
 
-@cli.command('rename')
+@cli.command("add")
 @click.pass_context
-@click.argument('overview_file')
+def add(ctx):
+    """."""
+
+    input_path = ctx.obj["argument"]
+
+    def processor(prj):
+        """."""
+        prj.Path = input_path
+        prj.config.project_path = input_path
+        if not prj.add_images():
+            return
+
+        return prj
+
+    return processor
+
+
+@cli.command("rename")
+@click.pass_context
+@click.argument("overview_file")
 def auto_rename(ctx, overview_file=""):
     """auto_rename"""
+
     def processor(prj):
         """Run the auto renamer"""
 
@@ -85,21 +103,25 @@ def auto_rename(ctx, overview_file=""):
         success = False
 
         try:
-            success = fibresem.addons.renamer.run(project=prj, overview_file=overview_file)
+            success = fibresem.addons.renamer.run(
+                project=prj, overview_file=overview_file
+            )
         except FileNotFoundError as err:
             logging.warning(err)
-            
+
         if not success:
             logging.warning("No files were renamed!")
 
         return prj
+
     return processor
 
 
-@cli.command('crop')
+@cli.command("crop")
 @click.pass_context
 def annotate(ctx):
     """annotate"""
+
     def processor(project: Project):
         """Crop and annotate all images"""
 
@@ -110,14 +132,16 @@ def annotate(ctx):
             image.annotate()
 
         return project
+
     return processor
 
 
-@cli.command('diam')
+@cli.command("diam")
 @click.pass_context
-@click.option('--thick-opt/--no-thick-opt', default=False)
+@click.option("--thick-opt/--no-thick-opt", default=False)
 def diameter_analysis(ctx, thick_opt):
     """diameter_analysis"""
+
     def processor(project: Project):
         """Run diameter analysis on all pictures"""
 
@@ -134,8 +158,20 @@ def diameter_analysis(ctx, thick_opt):
         project.export_mat()
 
         return project
+
     return processor
 
 
-if __name__ == "__main__":    
+@cli.command("histo")
+@click.pass_context
+@click.argument("mat_file")
+@click.argument("xls_file")
+def histogram(ctx, mat_file, xls_file):
+    """Combine into histograms"""
+
+    def processor(project: Project):
+        """"""
+
+
+if __name__ == "__main__":
     cli()
