@@ -4,7 +4,7 @@ Test to see whether the simpoly steps can be converted to python.
 import os
 import tifffile
 import matplotlib.pyplot as plt
-from lib import readtif
+import readtif
 import skimage
 from skimage import exposure
 from skimage import morphology
@@ -14,7 +14,7 @@ import math
 
 
 def crop_square(tifimg):
-    # Crop to Square and omit the SEM meta bar
+    """Crop to Square and omit the SEM meta bar"""
 
     barheight = 0.11
     newHeight = round(tifimg.shape[0] * (1 - barheight))
@@ -27,11 +27,13 @@ def crop_square(tifimg):
 
 
 def save(ax, image, name, maxval=1):
+    """Save image"""
+    
     ax.imshow(image, cmap="gray", vmin=0, vmax=maxval)
     ax.axis("off")
 
     name = name + "-py.png"
-    pathout = os.path.join(os.getcwd(), "experimental", "conversion-out", name)
+    pathout = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", name)
     plt.savefig(pathout, bbox_inches="tight", pad_inches=0, dpi=300)
     print("Exported " + name)
 
@@ -41,7 +43,7 @@ if __name__ == "__main__":
 
     # Load image
     path = (
-        r"C:\Dev\python\sem\fibresem\testfiles\originals\COLL.226_0200u_s1_img014.tif"
+        r"C:\dev\python\sem\fibresem\sampledata\sample.01_img08.tif"
     )
     image, meta = readtif.importtif(path)
     print(
@@ -91,7 +93,7 @@ if __name__ == "__main__":
 
     # default sigma in MATLAB = sqrt(2), default in skimage = 1.0
     E = canny(
-        Iobr, sigma=1.7, low_threshold=0.2, high_threshold=0.4, use_quantiles=False
+        Iobr, sigma=1.7, low_threshold=0.2, high_threshold=0.75, use_quantiles=False
     )
     save(ax, E, "05-canny-sig17")
 

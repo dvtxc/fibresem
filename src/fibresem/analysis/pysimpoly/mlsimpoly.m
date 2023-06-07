@@ -1,11 +1,11 @@
-I = imread(fullfile(pwd, 'conversion-out', '00-original-py.png'));
+I = imread(fullfile(pwd, 'output', '00-original-py.png'));
 % take first channel
 I = I(:,:,1);
-pixelsize = 195.3;
-pixelsizeunit = 'µm';
+pixelsize = 9.766;
+pixelsizeunit = 'nm';
 
 params.optimiseForThinFibres = true;
-outputpath = fullfile(pwd, 'conversion-out');
+outputpath = fullfile(pwd, 'output');
 
 
 %Enhance contract using histogram equalization
@@ -55,15 +55,20 @@ OL = imoverlay(Ihist, E, 'red');
 fprintf("Create and optimise binary...\n");
 
 level = graythresh(I) + 0.1;
+saveimg(level, '08-graythresh');
+
 BW = imbinarize(Ihist,level);
+saveimg(BW, '09-imbinarize');
 
 %Perform morphological closing on the image, returning the closed image.
 BW = imclose(BW, strel('disk', 1));
+saveimg(BW, '10-close');
 
 %Apply a specific morphological operation to the binary image BW
 BW = bwmorph(BW, 'clean', 100000);
 BW = bwmorph(BW, 'fill', 5000);
 BW = bwmorph(BW, 'majority', 500);
+saveimg(BW, '11-clean-fill-majority');
 
 if ~params.optimiseForThinFibres
     BW = bwmorph(BW, 'thin', 4);
@@ -239,7 +244,7 @@ saveas(gcf, fullfile(outputpath{1}, 'diameter', outputpath{2}));
                    
 function saveimg(I, name)
     name = sprintf('%s-matlab.png', name);
-    outputpath = fullfile(pwd, 'conversion-out', name);
+    outputpath = fullfile(pwd, 'output', name);
 
     imwrite(I, outputpath);
     fprintf('Saved image %s\n', name);
