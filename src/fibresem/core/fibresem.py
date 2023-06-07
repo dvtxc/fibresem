@@ -23,22 +23,35 @@ SEM_BAR_HEIGHT = 0.11
 OUTPUT_FOLDER_NAME = "cropped"
 KEEP_IN_MEMORY = False
 
-
+"""
 def printtoarr():
     # This function 'burns' the information into the image array
 
-    """
+    
     io_buf = io.BytesIO()
     fig.savefig(io_buf, format='raw', dpi=DPI)
     io_buf.seek(0)
     img_arr = np.reshape(np.frombuffer(io_buf.getvalue(), dtype=np.uint8),
                         newshape=(int(fig.bbox.bounds[3]), int(fig.bbox.bounds[2]), -1))
     io_buf.close()
-    """
+"""
 
 
 def get_file_list_on_path(path: str, filterExtension="") -> list:
-    """Returns list of files in path"""
+    """Returns list of files in path
+    
+    Parameters
+    ----------
+    path : str
+        Root path to look in
+    filterExtension : str
+        File path extension filter, default = ".tif"
+
+    Returns
+    -------
+    fileList : list
+        List of strings, each a path to a file with the provided file extension
+    """
 
     fileList = []
 
@@ -63,15 +76,29 @@ class Project:
     
     This class contains the images of the project
     
-    Attributes:
-    path
-    file_list
-    images
-    config
-    engine_handler
+    Attributes
+    ----------
+    Path : str
+        Root path containing images
+    FileList : list
+        List of file paths
+    Images : list
+        List of refs to Image objects
+    config : Config
+        Ref to Config configuration object
+    engine_handler : MatlabEngine
+        
     """
 
     def __init__(self, path=".", config=Config()):
+        """
+        Parameters
+        ----------
+        path : str
+            Root path containing images
+        config : Config
+            Ref to Config configuration object
+        """
         self.Path = path
         self.FileList = list()
         self.Images = list()
@@ -82,19 +109,42 @@ class Project:
 
 
     def __len__(self):
-        """Override len(), return number of images."""
+        """Override len(), return number of images.
+        
+        Returns
+        -------
+        len : int
+            Number of images contained in the project
+        """
 
         return len(self.Images)
 
     def append_matlabengine(self) -> bool:
-        """Starts and appends matlab engine"""
+        """Starts and appends matlab engine
+        
+        Returns
+        -------
+        bool
+            Status of MatlabEngine
+        """
         #import fibresem.analysis.matlabenginehandler as matlabengine
 
         self.engine_handler = analysis_engines.MatlabEngine()
         return self.engine_handler.is_running
 
     def add_images(self, extension=".tif") -> bool:
-        """Get a list of all images on project path and add those images to the project"""
+        """Get a list of all images on project path and add those images to the project
+        
+        Parameter
+        ---------
+        extension : str
+            File path extension filter
+
+        Returns
+        -------
+        bool
+            Success
+        """
 
         logging.debug("Adding images.")
 
@@ -114,7 +164,20 @@ class Project:
         return True
 
     def getFileList(self, path=".", extension=".tif") -> bool:
-        """Set self.FileList"""
+        """Set self.FileList
+        
+        Parameters
+        ----------
+        path : str
+            Root path to look in
+        extension : str
+            File path extension filter, default = ".tif"
+
+        Returns
+        -------
+        bool
+            Success
+        """
 
         # Get list of files
         fileList = get_file_list_on_path(path, extension)
@@ -127,7 +190,15 @@ class Project:
         return False
 
     def run_diameter_analysis(self, method="matlab", verbose=False):
-        """Runs fibre diameter analysis on every image"""
+        """Runs fibre diameter analysis on every image
+        
+        Parameters
+        ----------
+        method : str
+            Default = "matlab" until porting to python has been completed
+        verbose : bool
+            Verbosity of the engine
+        """
 
         number_of_images = len(self.Images)
 
@@ -172,6 +243,7 @@ class Project:
 
     def analysis_summary(self):
         """Summarise results in dict"""
+
         variables = ["pixel_size_value","pixel_size_unit","pixel_average","pixel_sdev","average","sdev","unit"]
 
         index = [img.Filename for img in self.Images]
@@ -277,7 +349,21 @@ class Project:
 
 
 class Image:
-    """Image(parent, filepath)"""
+    """Image class
+    
+    Attributes
+    ----------
+    Project : Project
+        Ref to parent project
+    Path : str
+        File path to image file
+    Data : numpy.ndarray
+        Grayscale image data as 2D array
+    Meta : dict
+        Image meta information
+    Analysis : Analysis
+        Ref to image analysis
+    """
 
     def __init__(self, parent, filepath):
         self.Project = parent
@@ -323,7 +409,16 @@ class Image:
         self.Meta = None
 
     def crop_square(self, copy=False, barheight=SEM_BAR_HEIGHT):
-        """Crop to Square and omit the SEM meta bar"""
+        """Crop to Square and omit the SEM meta bar
+        
+        Parameters
+        ----------
+        copy : bool
+            If set to false, cropping will replace self.Data,
+            if set to true, cropping will output a copied ndarray
+        barheight : int
+            Height of SEM meta bar
+        """
 
         logging.debug("-- Cropping")
 
